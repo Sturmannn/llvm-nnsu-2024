@@ -3,7 +3,6 @@
 #include "clang/Frontend/CompilerInstance.h"
 #include "clang/Frontend/FrontendPluginRegistry.h"
 
-
 class AddAlwaysInlineConsumer : public clang::ASTConsumer {
 public:
   bool hasCondition(clang::Stmt *S) {
