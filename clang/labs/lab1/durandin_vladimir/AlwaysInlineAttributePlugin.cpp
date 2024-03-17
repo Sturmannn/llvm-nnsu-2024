@@ -6,7 +6,7 @@
 
 class AddAlwaysInlineConsumer : public clang::ASTConsumer {
 public:
-  bool HasCondition(clang::Stmt *S) {
+  bool hasCondition(clang::Stmt *S) {
     if (!S) {
       return false;
     }
@@ -18,7 +18,7 @@ public:
     }
 
     for (clang::Stmt *Child : S->children()) {
-      if (HasCondition(Child)) {
+      if (hasCondition(Child)) {
         return true;
       }
     }
@@ -32,7 +32,7 @@ public:
     for (clang::Decl *Decl : D) {
       FD = clang::dyn_cast<clang::FunctionDecl>(Decl);
       if (FD) {
-        if (!HasCondition(FD->getBody())) {
+        if (!hasCondition(FD->getBody())) {
           FD->addAttr(
               clang::AlwaysInlineAttr::CreateImplicit(FD->getASTContext()));
           FD->print(llvm::outs() << "__attribute__((always_inline)) ");
@@ -53,8 +53,8 @@ protected:
   }
 
   bool ParseArgs(const clang::CompilerInstance &CI,
-                 const std::vector<std::string> &args) override {
-    for (const std::string &arg : args) {
+                 const std::vector<std::string> &Args) override {
+    for (const std::string &arg : Args) {
       if (arg == "--help") {
         llvm::outs() << "This plugin adds the always_inline attribute to "
                         "functions if they do not have conditions!\n";

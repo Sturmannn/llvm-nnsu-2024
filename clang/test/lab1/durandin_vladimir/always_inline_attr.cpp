@@ -1,8 +1,8 @@
 // RUN: %clang_cc1 -load %llvmshlibdir/AlwaysInlineAttributePlugin%pluginext -plugin AddAlwaysInline %s 1>&1 | FileCheck %s --check-prefix=SUM
-// SUM: __attribute__((always_inline)) int sum(int a, int b) {
-// SUM-NEXT:   return a + b;
+// SUM: __attribute__((always_inline)) int sum(int A, int B) {
+// SUM-NEXT:   return A + B;
 // SUM-NEXT: }
-int sum(int a, int b) { return a + b; }
+int sum(int A, int B) { return A + B; }
 
 // RUN: %clang_cc1 -load %llvmshlibdir/AlwaysInlineAttributePlugin%pluginext -plugin AddAlwaysInline %s 1>&1 | FileCheck %s --check-prefix=EMPTY
 // EMPTY: __attribute__((always_inline)) void checkEmpty() {
@@ -10,47 +10,49 @@ int sum(int a, int b) { return a + b; }
 void checkEmpty() {}
 
 // RUN: %clang_cc1 -load %llvmshlibdir/AlwaysInlineAttributePlugin%pluginext -plugin AddAlwaysInline %s 1>&1 | FileCheck %s --check-prefix=MIN-NESTED
-// MIN-NESTED: int min_nested(int a, int b) {
+// MIN-NESTED: int minNested(int A, int B) {
 // MIN-NESTED-NEXT:     {
-// MIN-NESTED-NEXT:         if (a < b) {
-// MIN-NESTED-NEXT:             return a;
-// MIN-NESTED-NEXT:         } else
-// MIN-NESTED-NEXT:             return b;
+// MIN-NESTED-NEXT:         if (A < B) {
+// MIN-NESTED-NEXT:             return A;
+// MIN-NESTED-NEXT:         }
+// MIN-NESTED-NEXT:         return B;
 // MIN-NESTED-NEXT:     }
 // MIN-NESTED-NEXT: }
-int min_nested(int a, int b) {
+int minNested(int A, int B) {
   {
-    if (a < b) {
-      return a;
-    } else
-      return b;
+    if (A < B) {
+      return A;
+    }
+    return B;
   }
 }
 
-// CHECK: int min(int a, int b) {
-// CHECK-NEXT:     if (a < b) {
-// CHECK-NEXT:         return a;
-// CHECK-NEXT:     } else
-// CHECK-NEXT:         return b;
+// CHECK: int min(int A, int B) {
+// CHECK-NEXT:     if (A < b) {
+// CHECK-NEXT:         return A;
+// CHECK-NEXT:     }
+// CHECK-NEXT:     return B;
 // CHECK-NEXT: }
-int min(int a, int b) {
-  if (a < b) {
-    return a;
-  } else
-    return b;
+int min(int A, int B) {
+  if (A < B) {
+    return A;
+  }
+  return B;
 }
 
 
 // RUN: %clang_cc1 -load %llvmshlibdir/AlwaysInlineAttributePlugin%pluginext -plugin AddAlwaysInline %s 1>&1 | FileCheck %s --check-prefix=LOOP
-// LOOP: void loop() {
-// LOOP-NEXT:     int counter = 0;
-// LOOP-NEXT:     for (int i = 0; i < 2; i++) {
-// LOOP-NEXT:         counter = i;
+// LOOP: int loop() {
+// LOOP-NEXT:     int Counter = 0;
+// LOOP-NEXT:     for (int I = 0; I < 2; I++) {
+// LOOP-NEXT:         Counter += I;
 // LOOP-NEXT:     }
+// LOOP-NEXT:     return Counter;
 // LOOP-NEXT: }
-void loop() {
-  int counter = 0;
-  for (int i = 0; i < 2; i++) {
-    counter = i;
+int loop() {
+  int Counter = 0;
+  for (int I = 0; I < 2; I++) {
+    Counter += I;
   }
+  return Counter;
 }
