@@ -31,7 +31,8 @@ public:
     for (clang::Decl *Decl : D) {
       FD = clang::dyn_cast<clang::FunctionDecl>(Decl);
       if (FD) {
-        if (!hasCondition(FD->getBody())) {
+        if (!FD->hasAttr<clang::AlwaysInlineAttr>() &&
+            !hasCondition(FD->getBody())) {
           FD->addAttr(
               clang::AlwaysInlineAttr::CreateImplicit(FD->getASTContext()));
           FD->print(llvm::outs() << "__attribute__((always_inline)) ");
@@ -57,8 +58,9 @@ protected:
       if (arg == "--help") {
         llvm::outs() << "This plugin adds the always_inline attribute to "
                         "functions if they do not have conditions!\n";
-        return false;
-      }
+      } else
+        llvm::outs()
+            << "Use the --help argument to understand the plugin's purpose!\n";
     }
     return true;
   }
