@@ -43,26 +43,24 @@ struct CustomInliningPass : public PassInfoMixin<CustomInliningPass> {
         }
       }
     }
+
     // Process each call site
     size_t counter_splited = 0;
     size_t counter_inlined = 0;
     for (CallInst *CI : callsToInline) {
       BasicBlock *InsertBB = CI->getParent();
-      // Instruction *InsertPt = CI->getNextNonTerminator();
       Instruction *InsertPt = getNextNonTerminator(InsertBB, CI);
 
       // Create a map for block correspondence
       DenseMap<BasicBlock *, BasicBlock *> BlockMap;
 
-      // Split the calling function at the call site (use ".inlined" for
+      // Split the calling function at the call site (use ".splited." for
       // clarity)
-
       BasicBlock *SplitBB = InsertBB->splitBasicBlock(
           InsertPt, InsertBB->getName() + ".splited." +
                         std::to_string(counter_splited++));
 
       // Create new blocks corresponding to empty function's blocks
-      // size_t counter = 0;
       BasicBlock *CalleeEntryBasicBlockPointer = nullptr;
       for (BasicBlock &CalleeBB : *Callee) {
         BasicBlock *NewBB = BasicBlock::Create(
@@ -75,18 +73,6 @@ struct CustomInliningPass : public PassInfoMixin<CustomInliningPass> {
       }
       InsertBB->getTerminator()->setSuccessor(0, CalleeEntryBasicBlockPointer);
 
-      // for (BasicBlock &Caller : F) {
-      //   // Instruction *terminator = Caller.getTerminator();
-      //   if (dyn_cast<ReturnInst>(Caller.getTerminator()) && dyn_cast<ReturnInst>(Caller.getTerminator())->getNumOperands() == 0) {
-      //     Caller.getTerminator()->setSuccessor(0, SplitBB);
-      //   } else {
-      //     for (BasicBlock &BB : *Callee) {
-      //       if (BB.getName() == Caller.getTerminator()->getName().str() + ".inlined." + std::to_string(counter_inlined)) {
-      //         Caller.getTerminator()->setSuccessor(0, &BB);
-      //       }
-      //     }
-      //   }
-      // }
       counter_inlined++;
 
       // Copy instructions from corresponding blocks
@@ -95,58 +81,58 @@ struct CustomInliningPass : public PassInfoMixin<CustomInliningPass> {
         BasicBlock *NewBB = BlockMap[&CalleeBB];
         for (Instruction &Inst : CalleeBB) {
           IRBuilder<> Builder(
-              NewBB); // Создание IRBuilder с указанием базового блока
-          Instruction *NewInst = Inst.clone(); // Клонируем инструкцию
-          // outs() << "instr = " << *NewInst << "\n\n";
-          Builder.Insert(
-              NewInst /*, Inst.getName()*/); // Добавляем клонированную
-                                             // инструкцию в конец базового
-                                             // блока
+              NewBB); // Create IRBuilder with specified basic block
+          Instruction *NewInst = Inst.clone(); // Clone the instruction
+          Builder.Insert(NewInst); // Add the cloned instruction to the end of
+                                   // the basic block
           VMap[&Inst] = NewInst;
         }
       }
+
       // Update branch instructions to target correct blocks
-      for (Instruction &Branch : *SplitBB) {
-        if (auto *BI = dyn_cast<BranchInst>(&Branch)) {
-          for (unsigned int i = 0, e = BI->getNumSuccessors(); i != e; ++i) {
-            BasicBlock *Successor = BI->getSuccessor(i);
-            BI->setSuccessor(i, BlockMap[Successor]);
+      // for (Instruction &Branch : *SplitBB) {
+      for (BasicBlock &CalleeBB : F) {
+        for (Instruction &Branch : CalleeBB) {
+          if (auto *BI = dyn_cast<BranchInst>(&Branch)) {
+            for (size_t i = 0, e = BI->getNumSuccessors(); i != e; ++i) {
+              BasicBlock *Successor = BI->getSuccessor(i);
+              if (BlockMap[Successor] != nullptr) {
+                BI->setSuccessor(i, BlockMap[Successor]);
+              }
+            }
           }
         }
       }
-      outs() << "after: \n" << F << "\n\n";
+
       for (BasicBlock &CalleeBB : *Callee) {
         BasicBlock *NewBB = BlockMap[&CalleeBB];
         for (Instruction &Inst : *NewBB) {
-          RemapInstruction(&Inst, VMap, RF_None, nullptr, nullptr);
+          RemapInstruction(&Inst, VMap, RF_IgnoreMissingLocals, nullptr,
+                           nullptr);
         }
       }
 
-      // Создание IRBuilder и установка его контекста
+      // Create IRBuilder and set its context
       IRBuilder<> Builder(F.getContext());
 
-      // Обход базовых блоков в Caller
+      // Traverse the basic blocks in Caller
       for (BasicBlock &BB : F) {
-        // Создаем копию списка инструкций для текущего базового блока
+        // Create a copy of the instruction list for the current basic block
         std::vector<Instruction *> Instructions;
         for (Instruction &I : BB) {
           Instructions.push_back(&I);
         }
 
-        // Обход инструкций в текущем базовом блоке через копию списка
         for (Instruction *I : Instructions) {
-          // Проверка, является ли текущая инструкция возвратом (ReturnInst)
           if (auto *RI = dyn_cast<ReturnInst>(I)) {
             if (RI->getParent() != SplitBB) {
-              // Удаление инструкции возврата из родительского базового блока
               RI->eraseFromParent();
 
-              // Создание инструкции безусловного перехода с использованием
-              // IRBuilder
+              // Create an unconditional branch instruction using IRBuilder
               Builder.SetInsertPoint(
-                  &BB); // Устанавливаем точку вставки в текущий базовый блок
+                  &BB); // Set the insertion point to the current basic block
               Builder.CreateBr(
-                  SplitBB); // Создаем безусловный переход к SplitBB
+                  SplitBB); // Create an unconditional branch to SplitBB
             }
           }
         }
