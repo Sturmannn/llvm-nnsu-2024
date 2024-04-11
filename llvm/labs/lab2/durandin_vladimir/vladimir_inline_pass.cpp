@@ -44,6 +44,10 @@ struct CustomInliningPass : public PassInfoMixin<CustomInliningPass> {
       }
     }
 
+    bool isPassChangeCodeStructure = false;
+    if (!callsToInline.empty())
+      isPassChangeCodeStructure = true;
+
     // Process each call site
     size_t counter_splited = 0;
     size_t counter_inlined = 0;
@@ -61,17 +65,15 @@ struct CustomInliningPass : public PassInfoMixin<CustomInliningPass> {
                         std::to_string(counter_splited++));
 
       // Create new blocks corresponding to empty function's blocks
-      BasicBlock *CalleeEntryBasicBlockPointer = nullptr;
       for (BasicBlock &CalleeBB : *Callee) {
         BasicBlock *NewBB = BasicBlock::Create(
             F.getContext(),
             CalleeBB.getName() + ".inlined." + std::to_string(counter_inlined),
             &F);
-        if (Callee->getEntryBlock().getName() == CalleeBB.getName())
-          CalleeEntryBasicBlockPointer = NewBB;
         BlockMap[&CalleeBB] = NewBB;
       }
-      InsertBB->getTerminator()->setSuccessor(0, CalleeEntryBasicBlockPointer);
+      InsertBB->getTerminator()->setSuccessor(
+          0, BlockMap[&Callee->getEntryBlock()]);
 
       counter_inlined++;
 
@@ -90,7 +92,6 @@ struct CustomInliningPass : public PassInfoMixin<CustomInliningPass> {
       }
 
       // Update branch instructions to target correct blocks
-      // for (Instruction &Branch : *SplitBB) {
       for (BasicBlock &CalleeBB : F) {
         for (Instruction &Branch : CalleeBB) {
           if (auto *BI = dyn_cast<BranchInst>(&Branch)) {
@@ -115,25 +116,26 @@ struct CustomInliningPass : public PassInfoMixin<CustomInliningPass> {
       // Create IRBuilder and set its context
       IRBuilder<> Builder(F.getContext());
 
-      // Traverse the basic blocks in Caller
+      // Traversing basic blocks in Caller
       for (BasicBlock &BB : F) {
-        // Create a copy of the instruction list for the current basic block
-        std::vector<Instruction *> Instructions;
+        // Creating a copy of the instruction list of ReturnInst type for the
+        // current basic block
+        SmallVector<ReturnInst *, 16> ReturnInstructions;
         for (Instruction &I : BB) {
-          Instructions.push_back(&I);
+          if (auto *RI = dyn_cast<ReturnInst>(&I)) {
+            ReturnInstructions.push_back(RI);
+          }
         }
 
-        for (Instruction *I : Instructions) {
-          if (auto *RI = dyn_cast<ReturnInst>(I)) {
-            if (RI->getParent() != SplitBB) {
-              RI->eraseFromParent();
+        for (ReturnInst *RI : ReturnInstructions) {
+          if (RI->getParent() != SplitBB) {
+            RI->eraseFromParent();
 
-              // Create an unconditional branch instruction using IRBuilder
-              Builder.SetInsertPoint(
-                  &BB); // Set the insertion point to the current basic block
-              Builder.CreateBr(
-                  SplitBB); // Create an unconditional branch to SplitBB
-            }
+            // Creating an unconditional branch instruction using IRBuilder
+            Builder.SetInsertPoint(
+                &BB); // Setting the insertion point to the current basic block
+            Builder.CreateBr(
+                SplitBB); // Creating an unconditional branch to SplitBB
           }
         }
       }
@@ -141,7 +143,10 @@ struct CustomInliningPass : public PassInfoMixin<CustomInliningPass> {
       // Remove the call instruction
       CI->eraseFromParent();
     }
-    return PreservedAnalyses::all();
+    if (isPassChangeCodeStructure)
+      return PreservedAnalyses::none();
+    else
+      return PreservedAnalyses::all();
   }
   static bool isRequired() { return true; }
 };
