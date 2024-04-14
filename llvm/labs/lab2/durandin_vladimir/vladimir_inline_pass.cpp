@@ -18,9 +18,7 @@ Instruction *getNextInstruction(BasicBlock *BB, Instruction *I) {
     if (&Inst == I) {
       for (auto &NextInst :
            llvm::make_range(std::next(I->getIterator()), BB->end())) {
-        // if (!NextInst.isTerminator()) {
         return &NextInst;
-        // }
       }
     }
   }
