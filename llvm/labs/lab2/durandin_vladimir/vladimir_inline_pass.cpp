@@ -13,14 +13,14 @@
 using namespace llvm;
 
 namespace {
-Instruction *getNextNonTerminator(BasicBlock *BB, Instruction *I) {
+Instruction *getNextInstruction(BasicBlock *BB, Instruction *I) {
   for (auto &Inst : *BB) {
     if (&Inst == I) {
       for (auto &NextInst :
            llvm::make_range(std::next(I->getIterator()), BB->end())) {
-        if (!NextInst.isTerminator()) {
-          return &NextInst;
-        }
+        // if (!NextInst.isTerminator()) {
+        return &NextInst;
+        // }
       }
     }
   }
@@ -44,16 +44,15 @@ struct CustomInliningPass : public PassInfoMixin<CustomInliningPass> {
       }
     }
 
-    bool isPassChangeCodeStructure = false;
-    if (!callsToInline.empty())
-      isPassChangeCodeStructure = true;
+    if (callsToInline.empty())
+      return PreservedAnalyses::all();
 
     // Process each call site
     size_t counter_splited = 0;
     size_t counter_inlined = 0;
     for (CallInst *CI : callsToInline) {
       BasicBlock *InsertBB = CI->getParent();
-      Instruction *InsertPt = getNextNonTerminator(InsertBB, CI);
+      Instruction *InsertPt = getNextInstruction(InsertBB, CI);
 
       // Create a map for block correspondence
       DenseMap<BasicBlock *, BasicBlock *> BlockMap;
@@ -142,11 +141,26 @@ struct CustomInliningPass : public PassInfoMixin<CustomInliningPass> {
 
       // Remove the call instruction
       CI->eraseFromParent();
+
+      // Create an iterator for the basic block SplitBB
+      Function::iterator it = F.begin();
+      // Iterate through all basic blocks until we find SplitBB
+      while (&*it != SplitBB && it != F.end()) {
+        ++it;
+      }
+      Function::iterator next_it{};
+      // If we found SplitBB and it's not the last block
+      while (it != F.end() && std::next(it) != F.end()) {
+        // Create a new iterator for the next block
+        next_it = std::next(it++);
+
+        // Move SplitBB after the next block
+      }
+      if (it != F.end())
+        SplitBB->moveAfter(&*next_it);
     }
-    if (isPassChangeCodeStructure)
-      return PreservedAnalyses::none();
-    else
-      return PreservedAnalyses::all();
+
+    return PreservedAnalyses::none();
   }
   static bool isRequired() { return true; }
 };

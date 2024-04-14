@@ -16,6 +16,7 @@
 ;    return num;
 ;}
 
+
 define dso_local void @_Z4funcv() #0 {
 entry:
   %a = alloca i32, align 4
@@ -50,16 +51,18 @@ entry:
 ; CHECK-NEXT:   %num.addr = alloca i32, align 4
 ; CHECK-NEXT:   store i32 %num, ptr %num.addr, align 4
 ; CHECK-NEXT:   br label %entry.inlined.0
-; CHECK: entry.splited.0:                                  ; preds = %entry.inlined.0
-; CHECK-NEXT:   %0 = load i32, ptr %num.addr, align 4
-; CHECK-NEXT:   ret i32 %0
+; CHECK-EMPTY: 
 ; CHECK: entry.inlined.0:                                  ; preds = %entry
-; CHECK-NEXT:   %1 = alloca i32, align 4
-; CHECK-NEXT:   store i32 0, ptr %1, align 4
-; CHECK-NEXT:   %2 = load i32, ptr %1, align 4
-; CHECK-NEXT:   %3 = add nsw i32 %2, 1
-; CHECK-NEXT:   store i32 %3, ptr %1, align 4
+; CHECK-NEXT:   %0 = alloca i32, align 4
+; CHECK-NEXT:   store i32 0, ptr %0, align 4
+; CHECK-NEXT:   %1 = load i32, ptr %0, align 4
+; CHECK-NEXT:   %2 = add nsw i32 %1, 1
+; CHECK-NEXT:   store i32 %2, ptr %0, align 4
 ; CHECK-NEXT:   br label %entry.splited.0
+; CHECK-EMPTY: 
+; CHECK: entry.splited.0:                                  ; preds = %entry.inlined.0
+; CHECK-NEXT:   %3 = load i32, ptr %num.addr, align 4
+; CHECK-NEXT:   ret i32 %3
 ; CHECK-NEXT: }
 
 ; --------------------------------------------------------------------
@@ -185,20 +188,21 @@ entry:
 ; CHECK-NEXT:   store float %add, ptr %a, align 4
 ; CHECK-NEXT:   br label %while.cond
 ; CHECK-EMPTY: 
-; CHECK-NEXT: while.cond:                                       ; preds = %while.body, %entry
+; CHECK: while.cond:                                       ; preds = %while.body, %entry
 ; CHECK-NEXT:   %1 = load float, ptr %a, align 4
 ; CHECK-NEXT:   %cmp = fcmp oge float %1, 0.000000e+00
 ; CHECK-NEXT:   br i1 %cmp, label %while.body, label %while.end
 ; CHECK-EMPTY: 
-; CHECK-NEXT: while.body:                                       ; preds = %while.cond
+; CHECK: while.body:                                       ; preds = %while.cond
 ; CHECK-NEXT:   %2 = load float, ptr %a, align 4
 ; CHECK-NEXT:   %sub = fsub float %2, 1.000000e+00
 ; CHECK-NEXT:   store float %sub, ptr %a, align 4
 ; CHECK-NEXT:   br label %while.cond
 ; CHECK-EMPTY: 
-; CHECK-NEXT: while.end:                                        ; preds = %while.cond
+; CHECK: while.end:                                        ; preds = %while.cond
 ; CHECK-NEXT:   ret void
 ; CHECK-NEXT: }
+
 
 ; CHECK: define dso_local void @_Z15bar_loop_inlinev() {
 ; CHECK: entry:
@@ -206,31 +210,31 @@ entry:
 ; CHECK-NEXT:   store i32 0, ptr %a, align 4
 ; CHECK-NEXT:   br label %entry.inlined.0
 ; CHECK-EMPTY: 
-; CHECK-NEXT: entry.splited.0:                                  ; preds = %while.end.inlined.0
-; CHECK-NEXT:   %0 = load i32, ptr %a, align 4
-; CHECK-NEXT:   %inc = add nsw i32 %0, 1
+; CHECK: entry.inlined.0:                                  ; preds = %entry
+; CHECK-NEXT:   %0 = alloca float, align 4
+; CHECK-NEXT:   store float 1.000000e+00, ptr %0, align 4
+; CHECK-NEXT:   %1 = load float, ptr %0, align 4
+; CHECK-NEXT:   %2 = fadd float %1, 1.000000e+00
+; CHECK-NEXT:   store float %2, ptr %0, align 4
+; CHECK-NEXT:   br label %while.cond.inlined.0
+; CHECK-EMPTY: 
+; CHECK: while.cond.inlined.0:                             ; preds = %while.body.inlined.0, %entry.inlined.0
+; CHECK-NEXT:   %3 = load float, ptr %0, align 4
+; CHECK-NEXT:   %4 = fcmp oge float %3, 0.000000e+00
+; CHECK-NEXT:   br i1 %4, label %while.body.inlined.0, label %while.end.inlined.0
+; CHECK-EMPTY: 
+; CHECK: while.body.inlined.0:                             ; preds = %while.cond.inlined.0
+; CHECK-NEXT:   %5 = load float, ptr %0, align 4
+; CHECK-NEXT:   %6 = fsub float %5, 1.000000e+00
+; CHECK-NEXT:   store float %6, ptr %0, align 4
+; CHECK-NEXT:   br label %while.cond.inlined.0
+; CHECK-EMPTY: 
+; CHECK: while.end.inlined.0:                              ; preds = %while.cond.inlined.0
+; CHECK-NEXT:   br label %entry.splited.0
+; CHECK-EMPTY: 
+; CHECK: entry.splited.0:                                  ; preds = %while.end.inlined.0
+; CHECK-NEXT:   %7 = load i32, ptr %a, align 4
+; CHECK-NEXT:   %inc = add nsw i32 %7, 1
 ; CHECK-NEXT:   store i32 %inc, ptr %a, align 4
 ; CHECK-NEXT:   ret void
-; CHECK-EMPTY: 
-; CHECK-NEXT: entry.inlined.0:                                  ; preds = %entry
-; CHECK-NEXT:   %1 = alloca float, align 4
-; CHECK-NEXT:   store float 1.000000e+00, ptr %1, align 4
-; CHECK-NEXT:   %2 = load float, ptr %1, align 4
-; CHECK-NEXT:   %3 = fadd float %2, 1.000000e+00
-; CHECK-NEXT:   store float %3, ptr %1, align 4
-; CHECK-NEXT:   br label %while.cond.inlined.0
-; CHECK-EMPTY: 
-; CHECK-NEXT: while.cond.inlined.0:                             ; preds = %while.body.inlined.0, %entry.inlined.0
-; CHECK-NEXT:   %4 = load float, ptr %1, align 4
-; CHECK-NEXT:   %5 = fcmp oge float %4, 0.000000e+00
-; CHECK-NEXT:   br i1 %5, label %while.body.inlined.0, label %while.end.inlined.0
-; CHECK-EMPTY: 
-; CHECK-NEXT: while.body.inlined.0:                             ; preds = %while.cond.inlined.0
-; CHECK-NEXT:   %6 = load float, ptr %1, align 4
-; CHECK-NEXT:   %7 = fsub float %6, 1.000000e+00
-; CHECK-NEXT:   store float %7, ptr %1, align 4
-; CHECK-NEXT:   br label %while.cond.inlined.0
-; CHECK-EMPTY: 
-; CHECK-NEXT: while.end.inlined.0:                              ; preds = %while.cond.inlined.0
-; CHECK-NEXT:   br label %entry.splited.0
 ; CHECK-NEXT: }
