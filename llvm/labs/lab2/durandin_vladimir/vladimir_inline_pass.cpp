@@ -48,7 +48,7 @@ struct CustomInliningPass : public PassInfoMixin<CustomInliningPass> {
     // Process each call site
     size_t counter_splited = 0;
     size_t counter_inlined = 0;
-    
+
     for (CallInst *CI : callsToInline) {
       BasicBlock *InsertBB = CI->getParent();
       Instruction *InsertPt = getNextInstruction(InsertBB, CI);
