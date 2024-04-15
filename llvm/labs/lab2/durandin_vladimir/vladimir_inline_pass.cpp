@@ -13,17 +13,6 @@
 using namespace llvm;
 
 namespace {
-Instruction *getNextInstruction(BasicBlock *BB, Instruction *I) {
-  for (auto &Inst : *BB) {
-    if (&Inst == I) {
-      for (auto &NextInst :
-           llvm::make_range(std::next(I->getIterator()), BB->end())) {
-        return &NextInst;
-      }
-    }
-  }
-  return nullptr;
-}
 
 struct CustomInliningPass : public PassInfoMixin<CustomInliningPass> {
   PreservedAnalyses run(Function &F, FunctionAnalysisManager &AM) {
@@ -51,7 +40,7 @@ struct CustomInliningPass : public PassInfoMixin<CustomInliningPass> {
 
     for (CallInst *CI : callsToInline) {
       BasicBlock *InsertBB = CI->getParent();
-      Instruction *InsertPt = getNextInstruction(InsertBB, CI);
+      Instruction *InsertPt = CI->getNextNode();
 
       // Create a map for block correspondence
       DenseMap<BasicBlock *, BasicBlock *> BlockMap;
