@@ -20,20 +20,16 @@ struct LoopWrapperPass : public PassInfoMixin<LoopWrapperPass> {
     FunctionCallee loopEndFunc = F.getParent()->getOrInsertFunction(
         "loop_end", FunctionType::getVoidTy(F.getContext()));
 
-    for (auto &BB : F) {
-      if (Loop *L = LI.getLoopFor(&BB)) {
-        if (L->getHeader() == &BB) {
-          BasicBlock *Preheader = L->getLoopPreheader();
-          if (!Preheader) {
-            // Create a new basic block
-            Preheader =
-                BasicBlock::Create(F.getContext(), "loop.preheader", &F, &BB);
-            // Make it the predecessor of the loop header
-            BranchInst::Create(&BB, Preheader);
-          }
+    // Iterate through LoopInfo items
+    for (auto &L : LI) {
+      BasicBlock *Header = L->getHeader();
+
+      // Insert loop_start in all predecessors of the loop header
+      for (auto *Pred : predecessors(Header)) {
+        if (!L->contains(Pred)) {
           // Check if loop_start call already exists
           bool hasLoopStart = false;
-          for (auto &I : *Preheader) {
+          for (auto &I : *Pred) {
             if (auto *CI = dyn_cast<CallInst>(&I)) {
               if (CI->getCalledFunction() == loopStartFunc.getCallee()) {
                 hasLoopStart = true;
@@ -43,32 +39,36 @@ struct LoopWrapperPass : public PassInfoMixin<LoopWrapperPass> {
           }
           // Insert loop_start if it doesn't already exist
           if (!hasLoopStart) {
-            IRBuilder<> builder(&*Preheader->getTerminator());
+            IRBuilder<> builder(&*Pred->getTerminator());
             builder.CreateCall(loopStartFunc);
           }
         }
+      }
 
-        if (L->isLoopExiting(&BB)) {
-          for (auto it = succ_begin(&BB), e = succ_end(&BB); it != e; ++it) {
-            BasicBlock *Successor = *it;
-            if (!L->contains(Successor)) {
-              // Check if loop_end call already exists
-              bool hasLoopEnd = false;
-              for (auto &I : *Successor) {
-                if (auto *CI = dyn_cast<CallInst>(&I)) {
-                  if (CI->getCalledFunction() == loopEndFunc.getCallee()) {
-                    hasLoopEnd = true;
-                    break;
-                  }
+      SmallVector<BasicBlock *, 8> ExitingBlocks;
+      L->getExitingBlocks(ExitingBlocks);
+
+      for (auto *ExitingBlock : ExitingBlocks) {
+        for (auto it = succ_begin(ExitingBlock), e = succ_end(ExitingBlock);
+             it != e; ++it) {
+          BasicBlock *Successor = *it;
+          if (!L->contains(Successor)) {
+            // Check if loop_end call already exists
+            bool hasLoopEnd = false;
+            for (auto &I : *Successor) {
+              if (auto *CI = dyn_cast<CallInst>(&I)) {
+                if (CI->getCalledFunction() == loopEndFunc.getCallee()) {
+                  hasLoopEnd = true;
+                  break;
                 }
               }
-              // Insert loop_end if it doesn't already exist
-              if (!hasLoopEnd) {
-                IRBuilder<> builder(&*Successor->getFirstInsertionPt());
-                builder.CreateCall(loopEndFunc);
-              }
-              break;
             }
+            // Insert loop_end if it doesn't already exist
+            if (!hasLoopEnd) {
+              IRBuilder<> builder(&*Successor->getFirstInsertionPt());
+              builder.CreateCall(loopEndFunc);
+            }
+            break;
           }
         }
       }
@@ -78,6 +78,7 @@ struct LoopWrapperPass : public PassInfoMixin<LoopWrapperPass> {
   }
   static bool isRequired() { return true; }
 };
+
 } // namespace
 
 extern "C" ::llvm::PassPluginLibraryInfo LLVM_ATTRIBUTE_WEAK
