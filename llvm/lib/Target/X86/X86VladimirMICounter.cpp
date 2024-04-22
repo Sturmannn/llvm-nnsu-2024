@@ -59,7 +59,7 @@ bool X86VladimirMICounterPass::runOnMachineFunction(MachineFunction &MF) {
     }
 
     // Update the counter
-    BuildMI(MBB, MBB.getFirstTerminator(), DL3, TII->get(X86::ADD64ri8), icReg)
+    BuildMI(MBB, MBB.getFirstTerminator(), DL3, TII->get(X86::ADD64ri32), icReg)
         .addReg(icReg)
         .addImm(count);
   }
