@@ -66,4 +66,5 @@ bool X86VladimirMICounterPass::runOnMachineFunction(MachineFunction &MF) {
   return true;
 }
 
-static RegisterPass<X86VladimirMICounterPass> X(MI_COUNTER_NAME, MI_COUNTER_DESC, false, false);
+static RegisterPass<X86VladimirMICounterPass> X(MI_COUNTER_NAME,
+                                                MI_COUNTER_DESC, false, false);
