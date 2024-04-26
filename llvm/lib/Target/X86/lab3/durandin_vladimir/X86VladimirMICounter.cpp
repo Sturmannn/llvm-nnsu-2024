@@ -25,13 +25,6 @@ private:
 
 char X86VladimirMICounterPass::ID = 0;
 
-FunctionPass *llvm::createX86VladimirMICounterPass() {
-  return new X86VladimirMICounterPass();
-}
-
-INITIALIZE_PASS(X86VladimirMICounterPass, MI_COUNTER_NAME, MI_COUNTER_DESC,
-                false, false)
-
 bool X86VladimirMICounterPass::runOnMachineFunction(MachineFunction &MF) {
   const TargetInstrInfo *TII = MF.getSubtarget().getInstrInfo();
   DebugLoc DL3 = MF.front().begin()->getDebugLoc();
@@ -65,9 +58,12 @@ bool X86VladimirMICounterPass::runOnMachineFunction(MachineFunction &MF) {
   }
 
   // Write to global variable ic
-  BuildMI(MF.back(), MF.back().begin(), DL3, TII->get(X86::MOV64mr))
+  BuildMI(MF.back(), MF.back().getFirstTerminator(), DL3,
+          TII->get(X86::MOV64mr))
       .addReg(icReg)
       .addExternalSymbol("ic");
 
   return true;
 }
+
+static RegisterPass<X86VladimirMICounterPass> X(MI_COUNTER_NAME, MI_COUNTER_DESC, false, false);

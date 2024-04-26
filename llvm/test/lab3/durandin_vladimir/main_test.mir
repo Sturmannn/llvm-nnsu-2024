@@ -1,4 +1,4 @@
-# RUN: llc -march=x86-64 -simplify-mir -run-pass=x86-vladimir-mi-counter %s -o - | FileCheck %s
+# RUN: llc -march=x86-64 -simplify-mir --load=%llvmshlibdir/X86VladimirMICounter%shlibext -run-pass=x86-vladimir-mi-counter %s -o - | FileCheck %s
 
 
 # COM: // The first empty func test
@@ -36,8 +36,8 @@
 # }
 
 --- |
-  ; ModuleID = '/home/sturmannn/llvm-nnsu-2024/llvm/test/lab3/durandin_vladimir/source_file.ll'
-  source_filename = "/home/sturmannn/llvm-nnsu-2024/llvm/test/lab3/durandin_vladimir/source_file.cpp"
+  ; ModuleID = '/home/sturmannn/llvm-nnsu-2024/llvm/test/lab3/tmp/pered.mir'
+  source_filename = "/home/sturmannn/llvm-nnsu-2024/llvm/test/lab3/tmp/test.cpp"
   target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
   target triple = "x86_64-unknown-linux-gnu"
   
@@ -178,26 +178,16 @@
 name:            _Z10empty_funcv
 alignment:       16
 tracksRegLiveness: true
-tracksDebugUserValues: true
+registers:
+  - { id: 0, class: gr64 }
+  # CHECK: - { id: 1, class: gr64 }
 frameInfo:
-  stackSize:       8
-  offsetAdjustment: -8
   maxAlignment:    1
-  maxCallFrameSize: 0
-fixedStack:
-  - { id: 0, type: spill-slot, offset: -16, size: 8, alignment: 16 }
 machineFunctionInfo: {}
 body:             |
   bb.0.entry:
-    ; CHECK: MOV64mr %0, &ic
-    frame-setup PUSH64r killed $rbp, implicit-def $rsp, implicit $rsp
-    frame-setup CFI_INSTRUCTION def_cfa_offset 16
-    frame-setup CFI_INSTRUCTION offset $rbp, -16
-    $rbp = frame-setup MOV64rr $rsp
-    frame-setup CFI_INSTRUCTION def_cfa_register $rbp
-    $rbp = frame-destroy POP64r implicit-def $rsp, implicit $rsp
-    frame-destroy CFI_INSTRUCTION def_cfa $rsp, 8
-    ; CHECK: %0:gr64 = ADD64ri32 %0, 8, implicit-def $eflags
+    ; CHECK: %1:gr64 = ADD64ri32 %1, 1, implicit-def $eflags
+    ; CHECK: MOV64mr %1, &ic
     RET64
 
 ...
@@ -205,77 +195,97 @@ body:             |
 name:            _Z9main_funciii
 alignment:       16
 tracksRegLiveness: true
-tracksDebugUserValues: true
+registers:
+  - { id: 0, class: gr32 }
+  - { id: 1, class: gr32 }
+  - { id: 2, class: gr32 }
+  - { id: 3, class: gr32 }
+  - { id: 4, class: gr32 }
+  - { id: 5, class: gr32 }
+  - { id: 6, class: gr32 }
+  - { id: 7, class: gr32 }
+  - { id: 8, class: gr32 }
+  - { id: 9, class: gr32 }
+  - { id: 10, class: gr32 }
+  - { id: 11, class: gr32 }
+  - { id: 12, class: gr32 }
+  - { id: 13, class: gr32 }
+  - { id: 14, class: gr32 }
+  - { id: 15, class: gr32 }
+  - { id: 16, class: gr32 }
+  - { id: 17, class: gr32 }
+  - { id: 18, class: gr32 }
+  - { id: 19, class: gr32 }
+  - { id: 20, class: gr32 }
+  - { id: 21, class: gr32 }
+  - { id: 22, class: gr32 }
+  - { id: 23, class: gr64 }
+  # CHECK: - { id: 24, class: gr64 }
 liveins:
-  - { reg: '$edi' }
-  - { reg: '$esi' }
-  - { reg: '$edx' }
+  - { reg: '$edi', virtual-reg: '%0' }
+  - { reg: '$esi', virtual-reg: '%2' }
+  - { reg: '$edx', virtual-reg: '%4' }
 frameInfo:
-  stackSize:       8
-  offsetAdjustment: -8
   maxAlignment:    4
-  maxCallFrameSize: 0
-fixedStack:
-  - { id: 0, type: spill-slot, offset: -16, size: 8, alignment: 16 }
 stack:
-  - { id: 0, name: a.addr, offset: -36, size: 4, alignment: 4 }
-  - { id: 1, name: b.addr, offset: -32, size: 4, alignment: 4 }
-  - { id: 2, name: c.addr, offset: -28, size: 4, alignment: 4 }
-  - { id: 3, name: d, offset: -20, size: 4, alignment: 4 }
-  - { id: 4, name: i, offset: -24, size: 4, alignment: 4 }
+  - { id: 0, name: a.addr, size: 4, alignment: 4 }
+  - { id: 1, name: b.addr, size: 4, alignment: 4 }
+  - { id: 2, name: c.addr, size: 4, alignment: 4 }
+  - { id: 3, name: d, size: 4, alignment: 4 }
+  - { id: 4, name: i, size: 4, alignment: 4 }
 machineFunctionInfo: {}
 body:             |
   bb.0.entry:
-    liveins: $edi, $edx, $esi
+    liveins: $edi, $esi, $edx
   
-    frame-setup PUSH64r killed $rbp, implicit-def $rsp, implicit $rsp
-    frame-setup CFI_INSTRUCTION def_cfa_offset 16
-    frame-setup CFI_INSTRUCTION offset $rbp, -16
-    $rbp = frame-setup MOV64rr $rsp
-    frame-setup CFI_INSTRUCTION def_cfa_register $rbp
-    MOV32mr $rbp, 1, $noreg, -20, $noreg, killed renamable $edi :: (store (s32) into %ir.a.addr)
-    MOV32mr $rbp, 1, $noreg, -16, $noreg, killed renamable $esi :: (store (s32) into %ir.b.addr)
-    MOV32mr $rbp, 1, $noreg, -12, $noreg, killed renamable $edx :: (store (s32) into %ir.c.addr)
+    %4:gr32 = COPY $edx
+    %2:gr32 = COPY $esi
+    %0:gr32 = COPY $edi
+    %1:gr32 = COPY killed %0
+    %3:gr32 = COPY killed %2
+    %5:gr32 = COPY killed %4
+    MOV32mr %stack.0.a.addr, 1, $noreg, 0, $noreg, %1 :: (store (s32) into %ir.a.addr)
+    MOV32mr %stack.1.b.addr, 1, $noreg, 0, $noreg, %3 :: (store (s32) into %ir.b.addr)
+    MOV32mr %stack.2.c.addr, 1, $noreg, 0, $noreg, %5 :: (store (s32) into %ir.c.addr)
     MOV64mi32 $noreg, 1, $noreg, @ic, $noreg, 0 :: (store (s64) into @ic)
-    MOV32mi $rbp, 1, $noreg, -4, $noreg, 0 :: (store (s32) into %ir.d)
-    MOV32mi $rbp, 1, $noreg, -8, $noreg, 0 :: (store (s32) into %ir.i)
-    ; CHECK: %0:gr64 = ADD64ri32 %0, 11, implicit-def $eflags
+    MOV32mi %stack.3.d, 1, $noreg, 0, $noreg, 0 :: (store (s32) into %ir.d)
+    MOV32mi %stack.4.i, 1, $noreg, 0, $noreg, 0 :: (store (s32) into %ir.i)
+    ; CHECK: %24:gr64 = ADD64ri32 %24, 12, implicit-def $eflags
   
   bb.1.for.cond:
-    renamable $eax = MOV32rm $rbp, 1, $noreg, -8, $noreg :: (load (s32) from %ir.i)
-    CMP32rm killed renamable $eax, $rbp, 1, $noreg, -20, $noreg, implicit-def $eflags :: (load (s32) from %ir.a.addr)
-    ; CHECK: %0:gr64 = ADD64ri32 %0, 3, implicit-def $eflags
-    JCC_1 %bb.6, 13, implicit killed $eflags
+    %8:gr32 = MOV32rm %stack.4.i, 1, $noreg, 0, $noreg :: (load (s32) from %ir.i)
+    CMP32rm %8, %stack.0.a.addr, 1, $noreg, 0, $noreg, implicit-def $eflags :: (load (s32) from %ir.a.addr)
+    ; CHECK: %24:gr64 = ADD64ri32 %24, 3, implicit-def $eflags
+    JCC_1 %bb.6, 13, implicit $eflags
   
   bb.2.for.body:
-    renamable $eax = MOV32rm $rbp, 1, $noreg, -4, $noreg :: (load (s32) from %ir.d)
-    CMP32rm killed renamable $eax, $rbp, 1, $noreg, -16, $noreg, implicit-def $eflags :: (load (s32) from %ir.b.addr)
-    ; CHECK: %0:gr64 = ADD64ri32 %0, 3, implicit-def $eflags
-    JCC_1 %bb.4, 13, implicit killed $eflags
+    %13:gr32 = MOV32rm %stack.3.d, 1, $noreg, 0, $noreg :: (load (s32) from %ir.d)
+    CMP32rm %13, %stack.1.b.addr, 1, $noreg, 0, $noreg, implicit-def $eflags :: (load (s32) from %ir.b.addr)
+    ; CHECK: %24:gr64 = ADD64ri32 %24, 3, implicit-def $eflags
+    JCC_1 %bb.4, 13, implicit $eflags
   
   bb.3.if.then:
-    renamable $eax = MOV32rm $rbp, 1, $noreg, -12, $noreg :: (load (s32) from %ir.c.addr)
-    renamable $eax = ADD32rm killed renamable $eax, $rbp, 1, $noreg, -4, $noreg, implicit-def dead $eflags :: (load (s32) from %ir.d)
-    MOV32mr $rbp, 1, $noreg, -4, $noreg, killed renamable $eax :: (store (s32) into %ir.d)
-    ; CHECK: %0:gr64 = ADD64ri32 %0, 3, implicit-def $eflags
+    %18:gr32 = MOV32rm %stack.2.c.addr, 1, $noreg, 0, $noreg :: (load (s32) from %ir.c.addr)
+    %17:gr32 = ADD32rm %18, %stack.3.d, 1, $noreg, 0, $noreg, implicit-def $eflags :: (load (s32) from %ir.d)
+    MOV32mr %stack.3.d, 1, $noreg, 0, $noreg, %17 :: (store (s32) into %ir.d)
+    ; CHECK: %24:gr64 = ADD64ri32 %24, 3, implicit-def $eflags
   
   bb.4.if.end:
-    ; CHECK: %0:gr64 = ADD64ri32 %0, 1, implicit-def $eflags
+    ; CHECK: %24:gr64 = ADD64ri32 %24, 1, implicit-def $eflags
     JMP_1 %bb.5
   
   bb.5.for.inc:
-    renamable $eax = MOV32rm $rbp, 1, $noreg, -8, $noreg :: (load (s32) from %ir.i)
-    renamable $eax = ADD32ri killed renamable $eax, 1, implicit-def dead $eflags
-    MOV32mr $rbp, 1, $noreg, -8, $noreg, killed renamable $eax :: (store (s32) into %ir.i)
-    ; CHECK: %0:gr64 = ADD64ri32 %0, 4, implicit-def $eflags
+    %22:gr32 = MOV32rm %stack.4.i, 1, $noreg, 0, $noreg :: (load (s32) from %ir.i)
+    %21:gr32 = ADD32ri %22, 1, implicit-def $eflags
+    MOV32mr %stack.4.i, 1, $noreg, 0, $noreg, %21 :: (store (s32) into %ir.i)
+    ; CHECK: %24:gr64 = ADD64ri32 %24, 4, implicit-def $eflags
     JMP_1 %bb.1
   
   bb.6.for.end:
-    ; CHECK: MOV64mr %0, &ic
-    renamable $eax = MOV32rm $rbp, 1, $noreg, -4, $noreg :: (load (s32) from %ir.d)
-    $rbp = frame-destroy POP64r implicit-def $rsp, implicit $rsp
-    frame-destroy CFI_INSTRUCTION def_cfa $rsp, 8
-    ; CHECK: %0:gr64 = ADD64ri32 %0, 4, implicit-def $eflags
+    %10:gr32 = MOV32rm %stack.3.d, 1, $noreg, 0, $noreg :: (load (s32) from %ir.d)
+    $eax = COPY %10
+    ; CHECK: %24:gr64 = ADD64ri32 %24, 3, implicit-def $eflags
+    ; CHECK: MOV64mr %24, &ic
     RET64 implicit $eax
 
 ...
@@ -283,85 +293,104 @@ body:             |
 name:            _Z11nested_funci
 alignment:       16
 tracksRegLiveness: true
-tracksDebugUserValues: true
+registers:
+  - { id: 0, class: gr32 }
+  - { id: 1, class: gr32 }
+  - { id: 2, class: gr32 }
+  - { id: 3, class: gr32 }
+  - { id: 4, class: gr32 }
+  - { id: 5, class: gr32 }
+  - { id: 6, class: gr32 }
+  - { id: 7, class: gr32 }
+  - { id: 8, class: gr32 }
+  - { id: 9, class: gr32 }
+  - { id: 10, class: gr32 }
+  - { id: 11, class: gr32 }
+  - { id: 12, class: gr32 }
+  - { id: 13, class: gr32 }
+  - { id: 14, class: gr32 }
+  - { id: 15, class: gr32 }
+  - { id: 16, class: gr32 }
+  - { id: 17, class: gr32 }
+  - { id: 18, class: gr32 }
+  - { id: 19, class: gr32 }
+  - { id: 20, class: gr32 }
+  - { id: 21, class: gr32 }
+  - { id: 22, class: gr32 }
+  - { id: 23, class: gr32 }
+  - { id: 24, class: gr32 }
+  - { id: 25, class: gr32 }
+  - { id: 26, class: gr32 }
+  - { id: 27, class: gr32 }
+  - { id: 28, class: gr64 }
+  # CHECK: - { id: 29, class: gr64 }
 liveins:
-  - { reg: '$edi' }
+  - { reg: '$edi', virtual-reg: '%0' }
 frameInfo:
-  stackSize:       8
-  offsetAdjustment: -8
   maxAlignment:    4
-  maxCallFrameSize: 0
-fixedStack:
-  - { id: 0, type: spill-slot, offset: -16, size: 8, alignment: 16 }
 stack:
-  - { id: 0, name: n.addr, offset: -32, size: 4, alignment: 4 }
-  - { id: 1, name: res, offset: -20, size: 4, alignment: 4 }
-  - { id: 2, name: i, offset: -28, size: 4, alignment: 4 }
-  - { id: 3, name: j, offset: -24, size: 4, alignment: 4 }
+  - { id: 0, name: n.addr, size: 4, alignment: 4 }
+  - { id: 1, name: res, size: 4, alignment: 4 }
+  - { id: 2, name: i, size: 4, alignment: 4 }
+  - { id: 3, name: j, size: 4, alignment: 4 }
 machineFunctionInfo: {}
 body:             |
   bb.0.entry:
     liveins: $edi
   
-    frame-setup PUSH64r killed $rbp, implicit-def $rsp, implicit $rsp
-    frame-setup CFI_INSTRUCTION def_cfa_offset 16
-    frame-setup CFI_INSTRUCTION offset $rbp, -16
-    $rbp = frame-setup MOV64rr $rsp
-    frame-setup CFI_INSTRUCTION def_cfa_register $rbp
-    MOV32mr $rbp, 1, $noreg, -16, $noreg, killed renamable $edi :: (store (s32) into %ir.n.addr)
-    MOV32mi $rbp, 1, $noreg, -4, $noreg, 0 :: (store (s32) into %ir.res)
-    MOV32mi $rbp, 1, $noreg, -12, $noreg, 0 :: (store (s32) into %ir.i)
-    ; CHECK: %0:gr64 = ADD64ri32 %0, 8, implicit-def $eflags
+    %0:gr32 = COPY $edi
+    %1:gr32 = COPY killed %0
+    MOV32mr %stack.0.n.addr, 1, $noreg, 0, $noreg, %1 :: (store (s32) into %ir.n.addr)
+    MOV32mi %stack.1.res, 1, $noreg, 0, $noreg, 0 :: (store (s32) into %ir.res)
+    MOV32mi %stack.2.i, 1, $noreg, 0, $noreg, 0 :: (store (s32) into %ir.i)
+    ; CHECK: %29:gr64 = ADD64ri32 %29, 5, implicit-def $eflags
   
   bb.1.for.cond:
-    renamable $eax = MOV32rm $rbp, 1, $noreg, -12, $noreg :: (load (s32) from %ir.i)
-    CMP32rm killed renamable $eax, $rbp, 1, $noreg, -16, $noreg, implicit-def $eflags :: (load (s32) from %ir.n.addr)
-    ; CHECK: %0:gr64 = ADD64ri32 %0, 3, implicit-def $eflags
-    JCC_1 %bb.8, 13, implicit killed $eflags
+    %4:gr32 = MOV32rm %stack.2.i, 1, $noreg, 0, $noreg :: (load (s32) from %ir.i)
+    CMP32rm %4, %stack.0.n.addr, 1, $noreg, 0, $noreg, implicit-def $eflags :: (load (s32) from %ir.n.addr)
+    ; CHECK: %29:gr64 = ADD64ri32 %29, 3, implicit-def $eflags
+    JCC_1 %bb.8, 13, implicit $eflags
   
   bb.2.for.body:
-    MOV32mi $rbp, 1, $noreg, -8, $noreg, 0 :: (store (s32) into %ir.j)
-    ; CHECK: %0:gr64 = ADD64ri32 %0, 1, implicit-def $eflags
+    MOV32mi %stack.3.j, 1, $noreg, 0, $noreg, 0 :: (store (s32) into %ir.j)
+    ; CHECK: %29:gr64 = ADD64ri32 %29, 1, implicit-def $eflags
   
   bb.3.for.cond1:
-    renamable $eax = MOV32rm $rbp, 1, $noreg, -8, $noreg :: (load (s32) from %ir.j)
-    CMP32rm killed renamable $eax, $rbp, 1, $noreg, -16, $noreg, implicit-def $eflags :: (load (s32) from %ir.n.addr)
-    ; CHECK: %0:gr64 = ADD64ri32 %0, 3, implicit-def $eflags
-    JCC_1 %bb.6, 13, implicit killed $eflags
+    %9:gr32 = MOV32rm %stack.3.j, 1, $noreg, 0, $noreg :: (load (s32) from %ir.j)
+    CMP32rm %9, %stack.0.n.addr, 1, $noreg, 0, $noreg, implicit-def $eflags :: (load (s32) from %ir.n.addr)
+    ; CHECK: %29:gr64 = ADD64ri32 %29, 3, implicit-def $eflags
+    JCC_1 %bb.6, 13, implicit $eflags
   
   bb.4.for.body3:
-    renamable $eax = MOV32rm $rbp, 1, $noreg, -12, $noreg :: (load (s32) from %ir.i)
-    renamable $eax = ADD32rm killed renamable $eax, $rbp, 1, $noreg, -4, $noreg, implicit-def dead $eflags :: (load (s32) from %ir.res)
-    MOV32mr $rbp, 1, $noreg, -4, $noreg, killed renamable $eax :: (store (s32) into %ir.res)
-    renamable $eax = MOV32rm $rbp, 1, $noreg, -8, $noreg :: (load (s32) from %ir.j)
-    renamable $eax = ADD32rm killed renamable $eax, $rbp, 1, $noreg, -4, $noreg, implicit-def dead $eflags :: (load (s32) from %ir.res)
-    MOV32mr $rbp, 1, $noreg, -4, $noreg, killed renamable $eax :: (store (s32) into %ir.res)
-    ; CHECK: %0:gr64 = ADD64ri32 %0, 6, implicit-def $eflags
+    %23:gr32 = MOV32rm %stack.2.i, 1, $noreg, 0, $noreg :: (load (s32) from %ir.i)
+    %22:gr32 = ADD32rm %23, %stack.1.res, 1, $noreg, 0, $noreg, implicit-def $eflags :: (load (s32) from %ir.res)
+    MOV32mr %stack.1.res, 1, $noreg, 0, $noreg, %22 :: (store (s32) into %ir.res)
+    %18:gr32 = MOV32rm %stack.3.j, 1, $noreg, 0, $noreg :: (load (s32) from %ir.j)
+    %17:gr32 = ADD32rm %18, %stack.1.res, 1, $noreg, 0, $noreg, implicit-def $eflags :: (load (s32) from %ir.res)
+    MOV32mr %stack.1.res, 1, $noreg, 0, $noreg, %17 :: (store (s32) into %ir.res)
+    ; CHECK: %29:gr64 = ADD64ri32 %29, 6, implicit-def $eflags
   
   bb.5.for.inc:
-    renamable $eax = MOV32rm $rbp, 1, $noreg, -8, $noreg :: (load (s32) from %ir.j)
-    renamable $eax = ADD32ri killed renamable $eax, 1, implicit-def dead $eflags
-    MOV32mr $rbp, 1, $noreg, -8, $noreg, killed renamable $eax :: (store (s32) into %ir.j)
-    ; CHECK: %0:gr64 = ADD64ri32 %0, 4, implicit-def $eflags
+    %27:gr32 = MOV32rm %stack.3.j, 1, $noreg, 0, $noreg :: (load (s32) from %ir.j)
+    %26:gr32 = ADD32ri %27, 1, implicit-def $eflags
+    MOV32mr %stack.3.j, 1, $noreg, 0, $noreg, %26 :: (store (s32) into %ir.j)
+    ; CHECK: %29:gr64 = ADD64ri32 %29, 4, implicit-def $eflags
     JMP_1 %bb.3
   
   bb.6.for.end:
-    ; CHECK: %0:gr64 = ADD64ri32 %0, 1, implicit-def $eflags
+    ; CHECK: %29:gr64 = ADD64ri32 %29, 1, implicit-def $eflags
     JMP_1 %bb.7
   
   bb.7.for.inc5:
-    renamable $eax = MOV32rm $rbp, 1, $noreg, -12, $noreg :: (load (s32) from %ir.i)
-    renamable $eax = ADD32ri killed renamable $eax, 1, implicit-def dead $eflags
-    MOV32mr $rbp, 1, $noreg, -12, $noreg, killed renamable $eax :: (store (s32) into %ir.i)
-    ; CHECK: %0:gr64 = ADD64ri32 %0, 4, implicit-def $eflags
+    %13:gr32 = MOV32rm %stack.2.i, 1, $noreg, 0, $noreg :: (load (s32) from %ir.i)
+    %12:gr32 = ADD32ri %13, 1, implicit-def $eflags
+    MOV32mr %stack.2.i, 1, $noreg, 0, $noreg, %12 :: (store (s32) into %ir.i)
+    ; CHECK: %29:gr64 = ADD64ri32 %29, 4, implicit-def $eflags
     JMP_1 %bb.1
   
   bb.8.for.end7:
-    ; CHECK: MOV64mr %0, &ic
-    renamable $eax = MOV32rm $rbp, 1, $noreg, -4, $noreg :: (load (s32) from %ir.res)
-    $rbp = frame-destroy POP64r implicit-def $rsp, implicit $rsp
-    frame-destroy CFI_INSTRUCTION def_cfa $rsp, 8
-    ; CHECK: %0:gr64 = ADD64ri32 %0, 4, implicit-def $eflags
+    %6:gr32 = MOV32rm %stack.1.res, 1, $noreg, 0, $noreg :: (load (s32) from %ir.res)
+    $eax = COPY %6
+    ; CHECK: %29:gr64 = ADD64ri32 %29, 3, implicit-def $eflags
+    ; CHECK: MOV64mr %29, &ic
     RET64 implicit $eax
-
-...
