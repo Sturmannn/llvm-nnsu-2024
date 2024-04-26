@@ -57,11 +57,14 @@ bool X86VladimirMICounterPass::runOnMachineFunction(MachineFunction &MF) {
         .addImm(count);
   }
 
-  // Write to global variable ic
-  BuildMI(MF.back(), MF.back().getFirstTerminator(), DL3,
-          TII->get(X86::MOV64mr))
-      .addReg(icReg)
-      .addExternalSymbol("ic");
+  for (auto &MBB : MF) {
+    if (MBB.getFirstTerminator() != MBB.end()) {
+      // Write to global variable ic
+      BuildMI(MBB, MBB.getFirstTerminator(), DL3, TII->get(X86::MOV64mr))
+          .addReg(icReg)
+          .addExternalSymbol("ic");
+    }
+  }
 
   return true;
 }
