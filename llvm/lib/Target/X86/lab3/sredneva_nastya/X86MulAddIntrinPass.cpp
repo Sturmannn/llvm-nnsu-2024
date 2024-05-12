@@ -35,20 +35,36 @@ public:
               if (NextMI->getOperand(1).getReg() == Reg ||
                   NextMI->getOperand(2).getReg() == Reg) {
 
-                MachineInstrBuilder BuilderMI = BuildMI(
-                    MBB, MI, MI->getDebugLoc(),
-                    MF.getSubtarget().getInstrInfo()->get(X86::VFMADD213PDr));
-                BuilderMI.addReg(NextMI->getOperand(0).getReg(),
-                                 RegState::Define);
-                BuilderMI.addReg(MI->getOperand(1).getReg());
-                BuilderMI.addReg(MI->getOperand(2).getReg());
+                bool hasDependency = false;
+                for (auto CheckMI = std::next(NextMI); CheckMI != MBB.end();
+                     ++CheckMI) {
+                  for (unsigned i = 1; i < CheckMI->getNumOperands(); ++i) {
+                    if (CheckMI->getOperand(i).getReg() == Reg && NextMI->getOperand(0).getReg() != Reg) {
+                      hasDependency = true;
+                      break;
+                    }
+                  }
+                  if (hasDependency) {
+                    break;
+                  }
+                }
 
-                BuilderMI.addReg(NextMI->getOperand(2).getReg());
+                if (!hasDependency) {
+                  MachineInstrBuilder BuilderMI = BuildMI(
+                      MBB, MI, MI->getDebugLoc(),
+                      MF.getSubtarget().getInstrInfo()->get(X86::VFMADD213PDr));
+                  BuilderMI.addReg(NextMI->getOperand(0).getReg(),
+                                   RegState::Define);
+                  BuilderMI.addReg(MI->getOperand(1).getReg());
+                  BuilderMI.addReg(MI->getOperand(2).getReg());
 
-                deletedInstrPtr.push_back(&*MI);
-                deletedInstrPtr.push_back(&*NextMI);
-                Changed = true;
+                  BuilderMI.addReg(NextMI->getOperand(2).getReg());
 
+                  deletedInstrPtr.push_back(&*MI);
+                  deletedInstrPtr.push_back(&*NextMI);
+                  Changed = true;
+                  break;
+                }
                 break;
               }
             } else if (NextMI->getOperand(1).getReg() == Reg ||
