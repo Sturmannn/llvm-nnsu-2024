@@ -27,10 +27,12 @@ char X86VladimirMICounterPass::ID = 0;
 
 bool X86VladimirMICounterPass::runOnMachineFunction(MachineFunction &MF) {
   const TargetInstrInfo *TII = MF.getSubtarget().getInstrInfo();
+  const TargetRegisterInfo *TRI = MF.getSubtarget().getRegisterInfo();
   DebugLoc DL3 = MF.front().begin()->getDebugLoc();
 
-  // Create a new virtual register
-  unsigned icReg = MF.getRegInfo().createVirtualRegister(&X86::GR64RegClass);
+  // Create a new virtual register for the counter
+  const TargetRegisterClass *PtrRC = TRI->getPointerRegClass(MF);
+  unsigned icReg = MF.getRegInfo().createVirtualRegister(PtrRC);
 
   // Check if global variable 'ic' exists
   Module &M = *MF.getFunction().getParent();
@@ -62,7 +64,7 @@ bool X86VladimirMICounterPass::runOnMachineFunction(MachineFunction &MF) {
       // Write to global variable ic
       BuildMI(MBB, MBB.getFirstTerminator(), DL3, TII->get(X86::MOV64mr))
           .addReg(icReg)
-          .addExternalSymbol("ic");
+          .addGlobalAddress(gvar);
     }
   }
 

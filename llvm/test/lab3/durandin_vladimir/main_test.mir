@@ -36,7 +36,7 @@
 # }
 
 --- |
-  ; ModuleID = '/home/sturmannn/llvm-nnsu-2024/llvm/test/lab3/tmp/pered.mir'
+  ; ModuleID = '/home/sturmannn/llvm-nnsu-2024/llvm/test/lab3/tmp/test.ll'
   source_filename = "/home/sturmannn/llvm-nnsu-2024/llvm/test/lab3/tmp/test.cpp"
   target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
   target triple = "x86_64-unknown-linux-gnu"
@@ -178,16 +178,15 @@
 name:            _Z10empty_funcv
 alignment:       16
 tracksRegLiveness: true
-registers:
-  - { id: 0, class: gr64 }
-  # CHECK: - { id: 1, class: gr64 }
+# CHECK: registers:
+# CHECK-NEXT:   - { id: 0, class: gr64 }
 frameInfo:
   maxAlignment:    1
 machineFunctionInfo: {}
 body:             |
   bb.0.entry:
-    ; CHECK: %1:gr64 = ADD64ri32 %1, 1, implicit-def $eflags
-    ; CHECK: MOV64mr %1, &ic
+    ; CHECK: %0:gr64 = ADD64ri32 %0, 1, implicit-def $eflags
+    ; CHECK-NEXT: MOV64mr %0, @ic
     RET64
 
 ...
@@ -219,8 +218,7 @@ registers:
   - { id: 20, class: gr32 }
   - { id: 21, class: gr32 }
   - { id: 22, class: gr32 }
-  - { id: 23, class: gr64 }
-  # CHECK: - { id: 24, class: gr64 }
+# CHECK: - { id: 23, class: gr64 }
 liveins:
   - { reg: '$edi', virtual-reg: '%0' }
   - { reg: '$esi', virtual-reg: '%2' }
@@ -250,42 +248,46 @@ body:             |
     MOV64mi32 $noreg, 1, $noreg, @ic, $noreg, 0 :: (store (s64) into @ic)
     MOV32mi %stack.3.d, 1, $noreg, 0, $noreg, 0 :: (store (s32) into %ir.d)
     MOV32mi %stack.4.i, 1, $noreg, 0, $noreg, 0 :: (store (s32) into %ir.i)
-    ; CHECK: %24:gr64 = ADD64ri32 %24, 12, implicit-def $eflags
+    ; CHECK: %23:gr64 = ADD64ri32 %23, 12, implicit-def $eflags
   
   bb.1.for.cond:
     %8:gr32 = MOV32rm %stack.4.i, 1, $noreg, 0, $noreg :: (load (s32) from %ir.i)
     CMP32rm %8, %stack.0.a.addr, 1, $noreg, 0, $noreg, implicit-def $eflags :: (load (s32) from %ir.a.addr)
-    ; CHECK: %24:gr64 = ADD64ri32 %24, 3, implicit-def $eflags
+    ; CHECK: %23:gr64 = ADD64ri32 %23, 3, implicit-def $eflags
+    ; CHECK-NEXT: MOV64mr %23, @ic
     JCC_1 %bb.6, 13, implicit $eflags
   
   bb.2.for.body:
     %13:gr32 = MOV32rm %stack.3.d, 1, $noreg, 0, $noreg :: (load (s32) from %ir.d)
     CMP32rm %13, %stack.1.b.addr, 1, $noreg, 0, $noreg, implicit-def $eflags :: (load (s32) from %ir.b.addr)
-    ; CHECK: %24:gr64 = ADD64ri32 %24, 3, implicit-def $eflags
+    ; CHECK: %23:gr64 = ADD64ri32 %23, 3, implicit-def $eflags
+    ; CHECK-NEXT: MOV64mr %23, @ic
     JCC_1 %bb.4, 13, implicit $eflags
   
   bb.3.if.then:
     %18:gr32 = MOV32rm %stack.2.c.addr, 1, $noreg, 0, $noreg :: (load (s32) from %ir.c.addr)
     %17:gr32 = ADD32rm %18, %stack.3.d, 1, $noreg, 0, $noreg, implicit-def $eflags :: (load (s32) from %ir.d)
     MOV32mr %stack.3.d, 1, $noreg, 0, $noreg, %17 :: (store (s32) into %ir.d)
-    ; CHECK: %24:gr64 = ADD64ri32 %24, 3, implicit-def $eflags
-  
+    ; CHECK: %23:gr64 = ADD64ri32 %23, 3, implicit-def $eflags
+
   bb.4.if.end:
-    ; CHECK: %24:gr64 = ADD64ri32 %24, 1, implicit-def $eflags
+    ; CHECK: %23:gr64 = ADD64ri32 %23, 1, implicit-def $eflags
+    ; CHECK-NEXT: MOV64mr %23, @ic
     JMP_1 %bb.5
   
   bb.5.for.inc:
     %22:gr32 = MOV32rm %stack.4.i, 1, $noreg, 0, $noreg :: (load (s32) from %ir.i)
     %21:gr32 = ADD32ri %22, 1, implicit-def $eflags
     MOV32mr %stack.4.i, 1, $noreg, 0, $noreg, %21 :: (store (s32) into %ir.i)
-    ; CHECK: %24:gr64 = ADD64ri32 %24, 4, implicit-def $eflags
+    ; CHECK: %23:gr64 = ADD64ri32 %23, 4, implicit-def $eflags
+    ; CHECK-NEXT: MOV64mr %23, @ic
     JMP_1 %bb.1
   
   bb.6.for.end:
     %10:gr32 = MOV32rm %stack.3.d, 1, $noreg, 0, $noreg :: (load (s32) from %ir.d)
     $eax = COPY %10
-    ; CHECK: %24:gr64 = ADD64ri32 %24, 3, implicit-def $eflags
-    ; CHECK: MOV64mr %24, &ic
+    ; CHECK: %23:gr64 = ADD64ri32 %23, 3, implicit-def $eflags
+    ; CHECK-NEXT: MOV64mr %23, @ic
     RET64 implicit $eax
 
 ...
@@ -322,8 +324,7 @@ registers:
   - { id: 25, class: gr32 }
   - { id: 26, class: gr32 }
   - { id: 27, class: gr32 }
-  - { id: 28, class: gr64 }
-  # CHECK: - { id: 29, class: gr64 }
+  # CHECK: - { id: 28, class: gr64 }
 liveins:
   - { reg: '$edi', virtual-reg: '%0' }
 frameInfo:
@@ -343,22 +344,24 @@ body:             |
     MOV32mr %stack.0.n.addr, 1, $noreg, 0, $noreg, %1 :: (store (s32) into %ir.n.addr)
     MOV32mi %stack.1.res, 1, $noreg, 0, $noreg, 0 :: (store (s32) into %ir.res)
     MOV32mi %stack.2.i, 1, $noreg, 0, $noreg, 0 :: (store (s32) into %ir.i)
-    ; CHECK: %29:gr64 = ADD64ri32 %29, 5, implicit-def $eflags
+    ; CHECK: %28:gr64 = ADD64ri32 %28, 5, implicit-def $eflags
   
   bb.1.for.cond:
     %4:gr32 = MOV32rm %stack.2.i, 1, $noreg, 0, $noreg :: (load (s32) from %ir.i)
     CMP32rm %4, %stack.0.n.addr, 1, $noreg, 0, $noreg, implicit-def $eflags :: (load (s32) from %ir.n.addr)
-    ; CHECK: %29:gr64 = ADD64ri32 %29, 3, implicit-def $eflags
+    ; CHECK: %28:gr64 = ADD64ri32 %28, 3, implicit-def $eflags
+    ; CHECK: MOV64mr %28, @ic
     JCC_1 %bb.8, 13, implicit $eflags
   
   bb.2.for.body:
     MOV32mi %stack.3.j, 1, $noreg, 0, $noreg, 0 :: (store (s32) into %ir.j)
-    ; CHECK: %29:gr64 = ADD64ri32 %29, 1, implicit-def $eflags
+    ; CHECK: %28:gr64 = ADD64ri32 %28, 1, implicit-def $eflags
   
   bb.3.for.cond1:
     %9:gr32 = MOV32rm %stack.3.j, 1, $noreg, 0, $noreg :: (load (s32) from %ir.j)
     CMP32rm %9, %stack.0.n.addr, 1, $noreg, 0, $noreg, implicit-def $eflags :: (load (s32) from %ir.n.addr)
-    ; CHECK: %29:gr64 = ADD64ri32 %29, 3, implicit-def $eflags
+    ; CHECK: %28:gr64 = ADD64ri32 %28, 3, implicit-def $eflags
+    ; CHECK-NEXT: MOV64mr %28, @ic
     JCC_1 %bb.6, 13, implicit $eflags
   
   bb.4.for.body3:
@@ -368,29 +371,34 @@ body:             |
     %18:gr32 = MOV32rm %stack.3.j, 1, $noreg, 0, $noreg :: (load (s32) from %ir.j)
     %17:gr32 = ADD32rm %18, %stack.1.res, 1, $noreg, 0, $noreg, implicit-def $eflags :: (load (s32) from %ir.res)
     MOV32mr %stack.1.res, 1, $noreg, 0, $noreg, %17 :: (store (s32) into %ir.res)
-    ; CHECK: %29:gr64 = ADD64ri32 %29, 6, implicit-def $eflags
+    ; CHECK: %28:gr64 = ADD64ri32 %28, 6, implicit-def $eflags
   
   bb.5.for.inc:
     %27:gr32 = MOV32rm %stack.3.j, 1, $noreg, 0, $noreg :: (load (s32) from %ir.j)
     %26:gr32 = ADD32ri %27, 1, implicit-def $eflags
     MOV32mr %stack.3.j, 1, $noreg, 0, $noreg, %26 :: (store (s32) into %ir.j)
-    ; CHECK: %29:gr64 = ADD64ri32 %29, 4, implicit-def $eflags
+    ; CHECK: %28:gr64 = ADD64ri32 %28, 4, implicit-def $eflags
+    ; CHECK-NEXT: MOV64mr %28, @ic
     JMP_1 %bb.3
   
   bb.6.for.end:
-    ; CHECK: %29:gr64 = ADD64ri32 %29, 1, implicit-def $eflags
+    ; CHECK: %28:gr64 = ADD64ri32 %28, 1, implicit-def $eflags
+    ; CHECK-NEXT: MOV64mr %28, @ic
     JMP_1 %bb.7
   
   bb.7.for.inc5:
     %13:gr32 = MOV32rm %stack.2.i, 1, $noreg, 0, $noreg :: (load (s32) from %ir.i)
     %12:gr32 = ADD32ri %13, 1, implicit-def $eflags
     MOV32mr %stack.2.i, 1, $noreg, 0, $noreg, %12 :: (store (s32) into %ir.i)
-    ; CHECK: %29:gr64 = ADD64ri32 %29, 4, implicit-def $eflags
+    ; CHECK: %28:gr64 = ADD64ri32 %28, 4, implicit-def $eflags
+    ; CHECK-NEXT: MOV64mr %28, @ic
     JMP_1 %bb.1
   
   bb.8.for.end7:
     %6:gr32 = MOV32rm %stack.1.res, 1, $noreg, 0, $noreg :: (load (s32) from %ir.res)
     $eax = COPY %6
-    ; CHECK: %29:gr64 = ADD64ri32 %29, 3, implicit-def $eflags
-    ; CHECK: MOV64mr %29, &ic
+    ; CHECK: %28:gr64 = ADD64ri32 %28, 3, implicit-def $eflags
+    ; CHECK-NEXT: MOV64mr %28, @ic
     RET64 implicit $eax
+
+...
