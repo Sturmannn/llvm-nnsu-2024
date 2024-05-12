@@ -6,8 +6,6 @@ add_llvm_pass_plugin(${PluginName}
   DEPENDS
   intrinsics_gen
   X86
-  LLVMX86CodeGen
-  X86CommonTableGen
   BUILDTREE_ONLY)
 
 target_include_directories(${PluginName} PUBLIC ${PATH_TO_X86})
