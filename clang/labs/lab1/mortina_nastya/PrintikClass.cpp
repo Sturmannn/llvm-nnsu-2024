@@ -11,24 +11,25 @@ public:
 
   PrintClassFieldsVisitor(bool printFields) : printFields(printFields) {}
 
-bool VisitCXXRecordDecl(clang::CXXRecordDecl *declaration) {
-  if (declaration->isClass() || declaration->isStruct()) {
-    llvm::outs() << "Class Name: " << declaration->getNameAsString() << "\n";
-    if (printFields) {
-      for (auto it = declaration->decls_begin(); it != declaration->decls_end(); ++it) {
-        if (auto field = llvm::dyn_cast<clang::FieldDecl>(*it)) {
-          llvm::outs() << "|_" << field->getNameAsString() << "\n";
-        } else if (auto var = llvm::dyn_cast<clang::VarDecl>(*it)) {
-          if (var->isStaticDataMember()) {
-            llvm::outs() << "|_" << var->getNameAsString() << "\n";
+  bool VisitCXXRecordDecl(clang::CXXRecordDecl *declaration) {
+    if (declaration->isClass() || declaration->isStruct()) {
+      llvm::outs() << "Class Name: " << declaration->getNameAsString() << "\n";
+      if (printFields) {
+        for (auto it = declaration->decls_begin();
+             it != declaration->decls_end(); ++it) {
+          if (auto field = llvm::dyn_cast<clang::FieldDecl>(*it)) {
+            llvm::outs() << "|_" << field->getNameAsString() << "\n";
+          } else if (auto var = llvm::dyn_cast<clang::VarDecl>(*it)) {
+            if (var->isStaticDataMember()) {
+              llvm::outs() << "|_" << var->getNameAsString() << "\n";
+            }
           }
         }
       }
+      llvm::outs() << "\n";
     }
-    llvm::outs() << "\n";
+    return true;
   }
-  return true;
-}
 };
 
 class PrintClassFieldsConsumer : public clang::ASTConsumer {
