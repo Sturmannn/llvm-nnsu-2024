@@ -7,19 +7,19 @@
 class PrintClassFieldsVisitor
     : public clang::RecursiveASTVisitor<PrintClassFieldsVisitor> {
 public:
-  bool printFields;
+  bool PrintFields;
 
-  PrintClassFieldsVisitor(bool printFields) : printFields(printFields) {}
+  PrintClassFieldsVisitor(bool PrintFields) : PrintFields(PrintFields) {}
 
-  bool VisitCXXRecordDecl(clang::CXXRecordDecl *declaration) {
-    if (declaration->isClass() || declaration->isStruct()) {
-      llvm::outs() << "Class Name: " << declaration->getNameAsString() << "\n";
-      if (printFields) {
-        for (auto it = declaration->decls_begin();
-             it != declaration->decls_end(); ++it) {
-          if (auto field = llvm::dyn_cast<clang::FieldDecl>(*it)) {
+  bool VisitCXXRecordDecl(clang::CXXRecordDecl *Declaration) {
+    if (Declaration->isClass() || Declaration->isStruct()) {
+      llvm::outs() << "Class Name: " << Declaration->getNameAsString() << "\n";
+      if (PrintFields) {
+        for (auto It = Declaration->decls_begin();
+             It != Declaration->decls_end(); ++It) {
+          if (auto field = llvm::dyn_cast<clang::FieldDecl>(*It)) {
             llvm::outs() << "|_" << field->getNameAsString() << "\n";
-          } else if (auto var = llvm::dyn_cast<clang::VarDecl>(*it)) {
+          } else if (auto var = llvm::dyn_cast<clang::VarDecl>(*It)) {
             if (var->isStaticDataMember()) {
               llvm::outs() << "|_" << var->getNameAsString() << "\n";
             }
@@ -36,7 +36,7 @@ class PrintClassFieldsConsumer : public clang::ASTConsumer {
 public:
   PrintClassFieldsVisitor Visitor;
 
-  PrintClassFieldsConsumer(bool printFields) : Visitor(printFields) {}
+  PrintClassFieldsConsumer(bool PrintFields) : Visitor(PrintFields) {}
 
   void HandleTranslationUnit(clang::ASTContext &Context) override {
     Visitor.TraverseDecl(Context.getTranslationUnitDecl());
@@ -45,18 +45,18 @@ public:
 
 class PrintClassFieldsAction : public clang::PluginASTAction {
 public:
-  bool printFields = true;
+  bool PrintFields = true;
 
   std::unique_ptr<clang::ASTConsumer>
   CreateASTConsumer(clang::CompilerInstance &CI, llvm::StringRef) override {
-    return std::make_unique<PrintClassFieldsConsumer>(printFields);
+    return std::make_unique<PrintClassFieldsConsumer>(PrintFields);
   }
 
   bool ParseArgs(const clang::CompilerInstance &CI,
                  const std::vector<std::string> &Args) override {
     for (const auto &arg : Args) {
       if (arg == "no_fields") {
-        printFields = false;
+        PrintFields = false;
       }
     }
     return true;
