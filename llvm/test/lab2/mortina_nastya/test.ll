@@ -125,6 +125,37 @@ return:                                           ; preds = %if.else, %if.then
   ; CHECK-NEXT: ret i32 %2
 }
 
+define dso_local noundef i32 @_Z4foo2ii(i32 noundef %a, i32 noundef %b) #0 {
+entry:
+  call void @start_instrument()
+  %a.addr = alloca i32, align 4
+  %b.addr = alloca i32, align 4
+  store i32 %a, ptr %a.addr, align 4
+  store i32 %b, ptr %b.addr, align 4
+  %0 = load i32, ptr %a.addr, align 4
+  %1 = load i32, ptr %b.addr, align 4
+  %add = add nsw i32 %0, %1
+  call void @end_instrument()
+  ret i32 %add
+
+  ; CHECK-LABEL: @_Z4foo2ii
+  ; CHECK-NEXT: entry:
+  ; CHECK-NEXT: call void @start_instrument()
+  ; CHECK-NEXT: %a.addr = alloca i32, align 4
+  ; CHECK-NEXT: %b.addr = alloca i32, align 4
+  ; CHECK-NEXT: store i32 %a, ptr %a.addr, align 4
+  ; CHECK-NEXT: store i32 %b, ptr %b.addr, align 4
+  ; CHECK-NEXT: %0 = load i32, ptr %a.addr, align 4
+  ; CHECK-NEXT: %1 = load i32, ptr %b.addr, align 4
+  ; CHECK-NEXT: %add = add nsw i32 %0, %1
+  ; CHECK-NEXT: call void @end_instrument()
+  ; CHECK-NEXT: ret i32 %add
+}
+
+declare void @start_instrument()
+
+declare void @end_instrument()
+
 attributes #0 = { mustprogress noinline nounwind optnone uwtable "frame-pointer"="all" "min-legal-vector-width"="0" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cmov,+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }
 
 !llvm.module.flags = !{!0, !1, !2, !3, !4}

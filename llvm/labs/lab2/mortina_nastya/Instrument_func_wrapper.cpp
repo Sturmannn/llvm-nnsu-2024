@@ -17,20 +17,29 @@ struct FunctionInstrumentation : llvm::PassInfoMixin<FunctionInstrumentation> {
     llvm::FunctionType *funcType =
         llvm::FunctionType::get(llvm::Type::getVoidTy(ctx), false);
     llvm::FunctionCallee startInstr =
-        (*mod).getOrInsertFunction("start_instrument", funcType);
+        mod->getOrInsertFunction("start_instrument", funcType);
     llvm::FunctionCallee endInstr =
-        (*mod).getOrInsertFunction("end_instrument", funcType);
+        mod->getOrInsertFunction("end_instrument", funcType);
 
-    for (auto &blk : func) {
-      for (auto &instr : blk) {
-        if (llvm::isa<llvm::CallInst>(&instr)) {
-          llvm::CallInst *callInstruction = llvm::cast<llvm::CallInst>(&instr);
-          if (callInstruction->getCalledFunction() == startInstr.getCallee()) {
-            hasStart = true;
-          } else if (callInstruction->getCalledFunction() ==
-                     endInstr.getCallee()) {
-            hasEnd = true;
-          }
+    llvm::Function *startFunc = llvm::dyn_cast<llvm::Function>(
+        startInstr.getCallee()->stripPointerCasts());
+    llvm::Function *endFunc = llvm::dyn_cast<llvm::Function>(
+        endInstr.getCallee()->stripPointerCasts());
+
+    for (auto *user : startFunc->users()) {
+      if (auto *callInst = llvm::dyn_cast<llvm::CallInst>(user)) {
+        if (callInst->getFunction() == &func) {
+          hasStart = true;
+          break;
+        }
+      }
+    }
+
+    for (auto *user : endFunc->users()) {
+      if (auto *callInst = llvm::dyn_cast<llvm::CallInst>(user)) {
+        if (callInst->getFunction() == &func) {
+          hasEnd = true;
+          break;
         }
       }
     }
@@ -39,6 +48,7 @@ struct FunctionInstrumentation : llvm::PassInfoMixin<FunctionInstrumentation> {
       builder.SetInsertPoint(&func.getEntryBlock().front());
       builder.CreateCall(startInstr);
     }
+
     if (!hasEnd) {
       for (llvm::BasicBlock &BB : func) {
         if (llvm::dyn_cast<llvm::ReturnInst>(BB.getTerminator())) {
