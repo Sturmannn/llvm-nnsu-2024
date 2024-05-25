@@ -68,7 +68,7 @@ private:
       remapInstructions(Callee, BlockMap, VMap);
 
       handleReturnInstructions(F, SplitBB);
-      removeCallInstruction(CI);
+      CI->eraseFromParent();
       moveSplitBBAfterNextBlock(F, SplitBB);
     }
   }
@@ -164,11 +164,9 @@ private:
     }
   }
 
-  void removeCallInstruction(CallInst *CI) { CI->eraseFromParent(); }
-
   void moveSplitBBAfterNextBlock(Function &F, BasicBlock *SplitBB) {
     Function::iterator it = F.begin();
-    while (&*it != SplitBB && it != F.end()) {
+    while (it != F.end() && &*it != SplitBB) {
       ++it;
     }
     Function::iterator next_it{};

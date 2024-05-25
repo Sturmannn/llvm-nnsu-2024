@@ -8,5 +8,5 @@ if (NOT WIN32 AND NOT CYGWIN)
 
     message(STATUS "Plugin: ${Plugin_Name} -- BUILDED")
 else()
-    message(STATUS "Plugin: ${Plugin_Name} -- NOT BUILDED")
+    message(STATUS "Plugin: ${Plugin_Name} -- NOT BUILT")
 endif()
