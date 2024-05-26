@@ -30,15 +30,15 @@ struct CustomInliningPass : public PassInfoMixin<CustomInliningPass> {
 
 private:
   std::vector<CallInst *> findCallsToInline(Function &F) {
-    Function *Callee{};
     std::vector<CallInst *> callsToInline{};
     for (auto &BB : F) {
       for (auto &I : BB) {
         if (auto *CI = dyn_cast<CallInst>(&I)) {
-          Callee = CI->getCalledFunction();
-          if (Callee && Callee->arg_size() == 0 &&
-              Callee->getReturnType()->isVoidTy()) {
-            callsToInline.push_back(CI);
+          if (Function *Callee = CI->getCalledFunction()) {
+            if (Callee->arg_size() == 0 &&
+                Callee->getReturnType()->isVoidTy()) {
+              callsToInline.push_back(CI);
+            }
           }
         }
       }
