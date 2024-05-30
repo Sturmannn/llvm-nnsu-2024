@@ -76,6 +76,10 @@ private:
         }
       }
     }
+    if (NextMI->getOperand(1).getReg() == Reg &&
+        NextMI->getOperand(2).getReg() == Reg) {
+      return true;
+    }
     return false;
   }
 
